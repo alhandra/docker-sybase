@@ -10,8 +10,9 @@
 ## This image use the SAP Express Edition
 
 ### BEFORE YOU BUILD
-        Before you build you should download ASE express edition yourself.
-
+        1) You should download ASE express edition yourself.
+        2) copy the resulting file ASE_Suite.linuxamd64.tgz to the assets directory
+        
 ### Build
 
         docker build -t sybase .

@@ -2,10 +2,10 @@
 
 # Source in the Sybase environment variables
 
-source /opt/sybase/SYBASE.sh
+source /opt/sap/SYBASE.sh
 
 # Start QIPSYBASE
-${SYBASE}/${SYBASE_ASE}/install/RUN_MYSYBASE
+${SYBASE}/${SYBASE_ASE}/install/RUN_SYBASE
 RET=$?
 
 # exit ${RET}

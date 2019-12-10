@@ -25,51 +25,62 @@ MAINTAINER Tuan Vo <vohungtuan@gmail.com>
 
 # ADD http://d1cuw2q49dpd0p.cloudfront.net/ASE16.0/Linux16SP02/ASE_Suite.linuxamd64.tgz /opt/tmp/
 RUN set -x \
- && curl -OLS http://d1cuw2q49dpd0p.cloudfront.net/ASE16.0/Linux16SP02/ASE_Suite.linuxamd64.tgz \
- && mkdir -p /opt/tmp/ \
- && tar xfz ASE_Suite.linuxamd64.tgz -C /opt/tmp/ \
- && rm -rf ASE_Suite.linuxamd64.tgz
-
+ && mkdir -p /opt/tmp/ 
 
 COPY assets/* /opt/tmp/
 
+WORKDIR  /opt/tmp
+
+RUN tar xfz ASE_Suite.linuxamd64.tgz -C /opt/tmp/ 
 
 # Setting kernel.shmmax and 
 RUN set -x \
  && cp /opt/tmp/sysctl.conf /etc/ \
  && true || /sbin/sysctl -p
 
+# see https://launchpad.support.sap.com/#/notes/2489781
 # Installing Sybase RPMs
-RUN set -x \
- && rpm -ivh --nodeps /opt/tmp/libaio-0.3.109-13.el7.x86_64.rpm \
- && rpm -ivh --nodeps /opt/tmp/gtk2-2.24.28-8.el7.x86_64.rpm \
- && rpm -Uvh --oldpackage --nodeps /opt/tmp/glibc-2.17-105.el7.i686.rpm
+RUN set -x && yum clean all
+RUN set -x && yum install -y unzip 
+RUN set -x && yum install -y libpng12
+RUN set -x && yum install -y libjpeg
+RUN set -x && yum install -y libXft
+RUN set -x && yum install -y libXp
+RUN set -x && yum install -y libXt 
+RUN set -x && yum install -y libXtst
+RUN set -x && yum install -y libXi
+RUN set -x && yum install -y libXmu
+RUN set -x && yum install -y libXext
+RUN set -x && yum install -y libSM
+RUN set -x && yum install -y libICE
+RUN set -x && yum install -y libX11
+RUN set -x && yum install -y openmotif
+RUN set -x && yum install -y libaio
 
 
-# Install Sybase
+# the response file was created for a specific hostname, lets replace by the correct one
+RUN sed -i -e "s/REPLACE_BY_HOSTNAME/`hostname`/g" /opt/tmp/sybase-response.txt
+
+# Install Sybase and create test instance and backup server
 RUN set -x \
- && /opt/tmp/ASE_Suite/setup.bin -f /opt/tmp/sybase-response.txt \
+ && /opt/tmp/setup.bin -f /opt/tmp/sybase-response.txt \
     -i silent \
     -DAGREE_TO_SAP_LICENSE=true \
     -DRUN_SILENT=true
 
-
-# Copy resource file
-RUN cp /opt/tmp/sybase-ase.rs /opt/sybase/ASE-16_0/sybase-ase.rs
-
-# Build ASE server
-RUN source /opt/sybase/SYBASE.sh \
- && /opt/sybase/ASE-16_0/bin/srvbuildres -r /opt/sybase/ASE-16_0/sybase-ase.rs
-
 # Change the Sybase interface
 # Set the Sybase startup script in entrypoint.sh
 
-RUN mv /opt/sybase/interfaces /opt/sybase/interfaces.backup \
- && cp /opt/tmp/interfaces /opt/sybase/ \
- && cp /opt/tmp/sybase-entrypoint.sh /usr/local/bin/ \
- && chmod +x /usr/local/bin/sybase-entrypoint.sh \
+#RUN mv /opt/sybase/interfaces /opt/sybase/interfaces.backup \
+# && cp /opt/tmp/interfaces /opt/sybase/ \
+# && cp /opt/tmp/sybase-entrypoint.sh /usr/local/bin/ \
+# && chmod +x /usr/local/bin/sybase-entrypoint.sh \
+# && ln -s /usr/local/bin/sybase-entrypoint.sh /sybase-entrypoint.sh
+
+RUN cp /opt/tmp/sybase-entrypoint.sh /usr/local/bin/ \
+     && chmod +x /usr/local/bin/sybase-entrypoint.sh \
  && ln -s /usr/local/bin/sybase-entrypoint.sh /sybase-entrypoint.sh
- 
+
 
 # Setup the ENV
 # https://docs.docker.com/engine/reference/builder/#run
